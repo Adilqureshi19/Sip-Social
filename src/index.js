@@ -2,6 +2,7 @@
 
 import dotenv from 'dotenv'
 import connectDB from "./db/index.js";
+import { app } from './app.js';
 
 dotenv.config({           //This is recent concept thus its not in documentation and you have to add experimentation feature on script in package.json
     path: './env'
@@ -14,8 +15,10 @@ connectDB()
         console.log(`Server is running on port : ${process.env.PORT}`);
     })
 })
-.catch(console.error("MONGODB connection falied !!!", error)
-)
+.catch((error)=>{console.error("MONGODB connection falied !!!", error);
+
+})
+
 
 
 
