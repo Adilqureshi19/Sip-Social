@@ -13,7 +13,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
-    user.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
   } catch (error) {
@@ -148,7 +148,7 @@ const loginUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
       req.user._id,
       {
-        $set: { refreshToken: undefined },
+        $unset: { refreshToken: 1 },
       },
       { new: true }
     );
@@ -192,7 +192,7 @@ const refreshAccessToken = asyncHandler(async(req, res)=>{
       return res.status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", newRefreshToken, options)
-      .json( new ApiResponse(200, {accessToken, newRefreshToken}, "Access Token refreshed "))
+      .json( new ApiResponse(200, {accessToken, refreshToken: newRefreshToken}, "Access Token refreshed "))
     } catch (error) {
       throw new ApiError(401, error?.message || "Invalid Refresh Token")
       
@@ -365,7 +365,7 @@ const getUserChannelProfile = asyncHandler(async(req, res)=>{
 })
 
 const getWatchHistory = asyncHandler(async(req, res)=>{
-  const user = User.aggregate([
+  const user = await User.aggregate([
     {
       $match: {
         _id: new mongoose.Types.ObjectId(req.user._id) // extracting id and making it mongoose appropriate because mongoose gives a string by default
