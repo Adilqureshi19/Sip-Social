@@ -24,7 +24,6 @@ const createTweet = asyncHandler(async (req, res) => {
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
-  // TODO: get user tweets
   const userId = req.user._id;
   const { page = 1, limit = 10 } = req.query;
 
@@ -34,45 +33,11 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
   const totalTweets = await Tweet.countDocuments({ owner: userId });
 
-  const tweets = await Tweet.aggregate([
-    {
-      $match: {
-        owner: new mongoose.Types.ObjectId(userId),
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "ownerInfo",
-      },
-    },
-    {
-      $addFields: {
-        owner: { $first: "$ownerInfo" },
-      },
-    },
-    {
-      $project: {
-        content: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        "owner.fullName": 1,
-        "owner.avatar": 1,
-        "owner.username": 1,
-      },
-    },
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $skip: (Number(page) - 1) * Number(limit),
-    },
-    {
-      $limit: Number(limit),
-    },
-  ]);
+  const tweets = await Tweet.find({ owner: userId })
+    .populate("owner", "fullName avatar username") // keep _id too
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(Number(limit));
 
   const totalPages = Math.ceil(totalTweets / Number(limit));
 
